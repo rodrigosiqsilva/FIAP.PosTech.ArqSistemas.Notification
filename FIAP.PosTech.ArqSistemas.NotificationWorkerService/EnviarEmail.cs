@@ -1,25 +1,44 @@
-﻿using System;
+﻿using FIAP.PosTech.ArqSistemas.NotificationWS.FIAP.PosTech.ArqSistemas.NotificationWS;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace FIAP.PosTech.ArqSistemas.NotificationWS
 {
-    static void EnviarEmail()
+
+    public static class Email
     {
-        // 1. Parametrizando os dados do servidor de e-mail de envio da plataforma
-        string servidorSmtp = "smtp.gmail.com";
-        int portaSmtp = 587;
-        string emailRemetente = "fiapcloudgames5@gmail.com";
-        string senhaRemetente = "fiap@123";
 
-        // Inicializa o serviço com os parâmetros globais de envio
-        EmailService emailService = new EmailService(servidorSmtp, portaSmtp, emailRemetente, senhaRemetente);
+        public static async Task EnviarMailKit()
+        {
+            Console.WriteLine("🎮 Iniciando o serviço de notificação da FIAP Cloud Games...");
 
-        // 2. Simulando dados dinâmicos dos integrantes que mudam a cada disparo
-        string emailDoNovoIntegrante = "rodrigosiqueirasilva@hotmail.com";
-        string nomeDoNovoIntegrante = "Rodrigo Siqueira";
+            string smtpServer = "smtp.gmail.com";
+            int smtpPort = 587; 
 
-        // Realiza o envio customizado
-        emailService.EnviarEmailBoasVindas(emailDoNovoIntegrante, nomeDoNovoIntegrante);
+            string remetenteEmail = "fiapcloudgames5@gmail.com";
+            //string remetenteSenha = "vhgx yaaj yjgl lfnw";
+            string remetenteSenha = "fiap@123";
+
+            // 3. Dados do destinatário do teste
+            string destinatarioEmail = "rodrigosiqueirasilva@hotmail.com";
+            string nomeJogador = "Rodrigo Siqueira";
+
+            // Instancia o serviço de e-mail passando as configurações via construtor
+            var emailService = new EmailServiceMailKit(smtpServer, smtpPort, remetenteEmail, remetenteSenha);
+
+            Console.WriteLine($"Disparando e-mail de boas-vindas para: {nomeJogador} ({destinatarioEmail})...");
+
+            // 4. Executa o envio assíncrono
+            try
+            {
+                await emailService.EnviarEmailBoasVindasAsync(destinatarioEmail, nomeJogador);
+                Console.WriteLine("🚀 Processo de envio concluído com sucesso!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Falha crítica no fluxo da aplicação: {ex.Message}");
+            }
+        }
     }
 }

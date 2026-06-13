@@ -5,71 +5,89 @@ using System.Text;
 namespace FIAP.PosTech.ArqSistemas.NotificationWS
 {
     using System;
-    using System.Net;
-    using System.Net.Mail;
     using System.Text;
+    using System.Threading.Tasks;
+    using MailKit.Net.Smtp;
+    using MailKit.Security;
+    using MimeKit;
 
-    public class EmailService
+    namespace FIAP.PosTech.ArqSistemas.NotificationWS
     {
-        private readonly string _smtpServer;
-        private readonly int _smtpPort;
-        private readonly string _senderEmail;
-        private readonly string _senderPassword;
-
-        /// <summary>
-        /// Construtor para parametrizar as credenciais e servidor de e-mail de envio.
-        /// </summary>
-        public EmailService(string smtpServer, int smtpPort, string senderEmail, string senderPassword)
+        public class EmailServiceMailKit
         {
-            _smtpServer = smtpServer;
-            _smtpPort = smtpPort;
-            _senderEmail = senderEmail;
-            _senderPassword = senderPassword;
-        }
+            private readonly string _smtpServer;
+            private readonly int _smtpPort;
+            private readonly string _senderEmail;
+            private readonly string _senderPassword;
 
-        /// <summary>
-        /// Envia o e-mail de boas-vindas parametrizado com o nome do integrante.
-        /// </summary>
-        /// <param name="emailDestinatario">E-mail do novo usuário/integrante.</param>
-        /// <param name="nomeIntegrante">Nome do integrante que receberá as boas-vindas.</param>
-        public void EnviarEmailBoasVindas(string emailDestinatario, string nomeIntegrante)
-        {
-            try
+            /// <summary>
+            /// Construtor para parametrizar as credenciais e servidor de e-mail de envio.
+            /// </summary>
+            public EmailServiceMailKit(string smtpServer, int smtpPort, string senderEmail, string senderPassword)
             {
-                // Configuração do remetente com um nome de exibição amigável
-                var de = new MailAddress(_senderEmail, "FIAP Cloud Games");
-                var para = new MailAddress(emailDestinatario);
+                _smtpServer = smtpServer;
+                _smtpPort = smtpPort;
+                _senderEmail = senderEmail;
+                _senderPassword = senderPassword;
+            }
 
-                var message = new MailMessage(de, para)
+            /// <summary>
+            /// Envia de forma assíncrona o e-mail de boas-vindas parametrizado com o nome do integrante usando MailKit.
+            /// </summary>
+            /// <param name="emailDestinatario">E-mail do novo usuário/integrante.</param>
+            /// <param name="nomeIntegrante">Nome do integrante que receberá as boas-vindas.</param>
+            public async Task EnviarEmailBoasVindasAsync(string emailDestinatario, string nomeIntegrante)
+            {
+                // 1. Criar a mensagem usando MimeKit
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress("FIAP Cloud Games", _senderEmail));
+                message.To.Add(new MailboxAddress(nomeIntegrante, emailDestinatario));
+                message.Subject = "🎮 Prepare o seu Setup! Bem-vindo à FIAP Cloud Games";
+
+                // Configurar o corpo HTML especificando explicitamente o Encoding UTF-8
+                var bodyBuilder = new BodyBuilder
                 {
-                    Subject = "🎮 Prepare o seu Setup! Bem-vindo à FIAP Cloud Games",
-                    Body = ObterTemplateHtmlBoasVindas(nomeIntegrante),
-                    IsBodyHtml = true, // Define que o corpo do e-mail aceita HTML
-                    BodyEncoding = Encoding.UTF8
+                    HtmlBody = ObterTemplateHtmlBoasVindas(nomeIntegrante)
                 };
+                message.Body = bodyBuilder.ToMessageBody();
 
-                using (var client = new SmtpClient(_smtpServer, _smtpPort))
+                // 2. Enviar a mensagem usando o SmtpClient do MailKit
+                // IMPORTANTE: Use "MailKit.Net.Smtp.SmtpClient" e não o "System.Net.Mail.SmtpClient"
+                using var client = new SmtpClient();
+
+                try
                 {
-                    client.Credentials = new NetworkCredential(_senderEmail, _senderPassword);
-                    client.EnableSsl = true; // Garante a segurança na transmissão
+                    // Identifica se deve usar SSL implícito (porta 465) ou TLS/STARTTLS (como a porta 587 do Gmail)
+                    var socketOptions = _smtpPort == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
 
-                    client.Send(message);
+                    // Conecta ao servidor SMTP
+                    await client.ConnectAsync(_smtpServer, _smtpPort, socketOptions);
+
+                    // Autentica na conta
+                    await client.AuthenticateAsync(_senderEmail, _senderPassword);
+
+                    // Envia o e-mail
+                    await client.SendAsync(message);
+
                     Console.WriteLine($"E-mail de boas-vindas enviado com sucesso para {nomeIntegrante}!");
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Erro ao enviar o e-mail via MailKit: {ex.Message}");
+                }
+                finally
+                {
+                    // Garante a desconexão limpa do servidor SMTP
+                    await client.DisconnectAsync(true);
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Erro ao enviar o e-mail: {ex.Message}");
-                // Em produção, trate o erro ou faça o log adequado
-            }
-        }
 
-        /// <summary>
-        /// Retorna o template HTML moderno com visual gamer/tecnológico.
-        /// </summary>
-        private string ObterTemplateHtmlBoasVindas(string nomeIntegrante)
-        {
-            return $@"
+            /// <summary>
+            /// Retorna o template HTML moderno com visual gamer/tecnológico.
+            /// </summary>
+            private string ObterTemplateHtmlBoasVindas(string nomeIntegrante)
+            {
+                return $@"
                 <!DOCTYPE html>
                 <html lang='pt-BR'>
                 <head>
@@ -210,6 +228,7 @@ namespace FIAP.PosTech.ArqSistemas.NotificationWS
                 </body>
                 </html>
                 ";
+            }
         }
     }
 }

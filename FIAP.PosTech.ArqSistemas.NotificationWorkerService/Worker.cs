@@ -1,3 +1,6 @@
+using FIAP.PosTech.ArqSistemas.NotificationWS;
+using FIAP.PosTech.ArqSistemas.NotificationWS.FIAP.PosTech.ArqSistemas.NotificationWS;
+
 namespace FIAP.PosTech.ArqSistemas.NotificationWorkerService
 {
     public class Worker(ILogger<Worker> logger) : BackgroundService
@@ -10,7 +13,8 @@ namespace FIAP.PosTech.ArqSistemas.NotificationWorkerService
                 {
                     logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 }
-                await Task.Delay(1000, stoppingToken);
+                await Email.EnviarMailKit();
+                await Task.Delay(100000000, stoppingToken);
             }
         }
     }
