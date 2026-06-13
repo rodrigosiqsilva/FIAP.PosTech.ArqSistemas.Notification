@@ -1,8 +1,8 @@
-using FIAP.PosTech.ArqSistemas.NotificationWorkerService;
 using FIAP.PosTech.ArqSistemas.NotificationWS.Services;
+using FIAP.PosTech.ArqSistemas.NotificationWS.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService<KafkaConsumerWorker>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 var configuration = new ConfigurationBuilder()
