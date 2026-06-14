@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FIAP.PosTech.ArqSistemas.NotificationWS.Models
 {
-    public class Usuario
+    public class User
     {
         public int Id { get; set; }
         public string Nome { get; set; }

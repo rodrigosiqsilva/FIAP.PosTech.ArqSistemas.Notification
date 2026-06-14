@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace FIAP.PosTech.ArqSistemas.UserAPI.Publisher.FIAP.PosTech.ArqSistemas.UserAPI.Consumer
 {
-    public record UserCreatedEvent(Usuario Usuario, DateTime CreatedAt, string? CorrelationId);
+    public record UserCreatedEvent(User Usuario, DateTime CreatedAt, string? CorrelationId);
 
     public class UserEventConsumer : IDisposable
     {
