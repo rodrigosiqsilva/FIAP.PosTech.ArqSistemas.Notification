@@ -1,33 +1,36 @@
-﻿using FIAP.PosTech.ArqSistemas.UserAPI.Publisher.FIAP.PosTech.ArqSistemas.UserAPI.Consumer;
+﻿using FIAP.PosTech.ArqSistemas.NotificationWS.Events;
+using FIAP.PosTech.ArqSistemas.UserAPI.Publisher.FIAP.PosTech.ArqSistemas.UserAPI.Consumer;
 
 namespace FIAP.PosTech.ArqSistemas.NotificationWS.Workers
 {
     public class KafkaConsumerWorker : BackgroundService
     {
-        private readonly UserEventConsumer _consumer;
+        private readonly UserEventConsumer _consumerUserCreated;
+        private readonly PaymentProcessedEventConsumer _consumerPaymentProcessed;
 
         public KafkaConsumerWorker(IConfiguration configuration)
         {
             var bootstrapServers = configuration["KafkaConfig:BootstrapServers"];
-            var topicName = configuration["KafkaConfig:TopicName"];
+            var topicNameUserCreated = configuration["KafkaConfig:TopicNameUserCreated"];
+            var topicNamePaymentProcessed = configuration["KafkaConfig:TopicNamePaymentProcessed"];
             var groupId = configuration["KafkaConfig:GroupId"];
 
-            // Passamos a configuração para o consumer também, 
-            // pois ele precisará dela para instanciar o EmailService
-            _consumer = new UserEventConsumer(bootstrapServers, topicName, groupId, configuration);
+            _consumerUserCreated = new UserEventConsumer(bootstrapServers, topicNameUserCreated, groupId, configuration);
+            _consumerPaymentProcessed = new PaymentProcessedEventConsumer(bootstrapServers, topicNamePaymentProcessed, groupId, configuration);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             Console.WriteLine("[Worker] Iniciando o consumo de mensagens do Kafka...");
 
-            // Inicia o loop de consumo. O código vai ficar rodando "preso" aqui dentro do loop.
-            await _consumer.StartConsumingAsync(stoppingToken);
+            await _consumerUserCreated.StartConsumingAsync(stoppingToken);
+            await _consumerPaymentProcessed.StartConsumingAsync(stoppingToken);
         }
 
         public override void Dispose()
         {
-            _consumer.Dispose();
+            _consumerUserCreated.Dispose();
+            _consumerPaymentProcessed.Dispose();
             base.Dispose();
         }
     }
