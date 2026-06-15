@@ -4,6 +4,12 @@ using System.Text;
 
 namespace FIAP.PosTech.ArqSistemas.NotificationWS.Models
 {
+
+    enum OrderStatus
+    {
+        Approved,
+        Rejected
+    }
     public class Order
     {
         public int Id { get; set; }
@@ -13,5 +19,6 @@ namespace FIAP.PosTech.ArqSistemas.NotificationWS.Models
         public string Game { get; set; }
         public decimal Preco { get; set; }
         public string EmailUser { get; set; }
+        public OrderStatus Status { get; set; }
     }
 }
