@@ -66,7 +66,7 @@ namespace FIAP.PosTech.ArqSistemas.UserAPI.Publisher.FIAP.PosTech.ArqSistemas.Us
                                     var emailService = new EmailService(_configuration);
 
                                     // Presumo que o método Enviar() receba o e-mail do usuário e o nome
-                                    await emailService.Enviar(emailUsuario, nome);
+                                    await emailService.EnviarBoasVindasAsync(emailUsuario, nome);
                                 }
                             }
                         }
