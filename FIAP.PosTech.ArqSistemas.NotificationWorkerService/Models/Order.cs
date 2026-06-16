@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using FIAP.PosTech.ArqSistemas.NotificationWS.Enums;
+
 
 namespace FIAP.PosTech.ArqSistemas.NotificationWS.Models
 {
-
-    enum OrderStatus
-    {
-        Approved,
-        Rejected
-    }
     public class Order
     {
         public int Id { get; set; }
