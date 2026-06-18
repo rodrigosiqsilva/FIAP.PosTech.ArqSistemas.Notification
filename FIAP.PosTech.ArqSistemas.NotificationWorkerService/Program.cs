@@ -3,7 +3,7 @@ using FIAP.PosTech.ArqSistemas.NotificationWS.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<KafkaConsumerWorker>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<IEmailService, EmailService>();
 
 var configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json")

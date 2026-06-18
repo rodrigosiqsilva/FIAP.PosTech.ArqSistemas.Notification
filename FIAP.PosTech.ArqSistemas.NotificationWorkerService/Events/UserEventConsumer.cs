@@ -12,12 +12,14 @@ namespace FIAP.PosTech.ArqSistemas.UserAPI.Publisher.FIAP.PosTech.ArqSistemas.Us
         private readonly IConsumer<string, string> _consumer;
         private readonly string _topicName;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
         // Adicionamos IConfiguration no construtor
-        public UserEventConsumer(string bootstrapServers, string topicName, string groupId, IConfiguration configuration)
+        public UserEventConsumer(string bootstrapServers, string topicName, string groupId, IConfiguration configuration, IEmailService emailService)
         {
             _topicName = topicName;
             _configuration = configuration;
+            _emailService = emailService;
 
             var config = new ConsumerConfig
             {
@@ -30,59 +32,50 @@ namespace FIAP.PosTech.ArqSistemas.UserAPI.Publisher.FIAP.PosTech.ArqSistemas.Us
             _consumer = new ConsumerBuilder<string, string>(config).Build();
         }
 
-        public Task StartConsumingAsync(CancellationToken cancellationToken)
+        public async Task StartConsumingAsync(CancellationToken cancellationToken)
         {
             _consumer.Subscribe(_topicName);
 
-            // Marcamos a Action como async para podermos usar o "await" lá embaixo no EmailService
-            return Task.Run(async () =>
+            // Garante que o método yields (retorna o controle) imediatamente para o Worker
+            await Task.Yield();
+
+            // Executa em uma thread do ThreadPool dedicada
+            await Task.Run(async () =>
             {
-                try
+                Console.WriteLine($"[Kafka] Iniciado loop de consumo para o tópico: {_topicName}");
+
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    try
                     {
-                        try
+                        // Consume é bloqueante, mas rodando dentro do Task.Run isolado, tudo bem.
+                        // Passamos o timeout pequeno ou o próprio token para não travar infinitamente.
+                        var consumeResult = _consumer.Consume(cancellationToken);
+
+                        if (consumeResult != null)
                         {
-                            var consumeResult = _consumer.Consume(cancellationToken);
+                            var message = consumeResult.Message.Value;
+                            Console.WriteLine($"[Kafka] Mensagem recebida no tópico {_topicName}: {message}");
 
-                            if (consumeResult != null)
+                            var user = JsonSerializer.Deserialize<UserCreatedEvent>(message);
+
+                            if (user != null)
                             {
-                                var options = new JsonSerializerOptions
-                                {
-                                    PropertyNameCaseInsensitive = true
-                                };
-
-                                var userEvent = JsonSerializer.Deserialize<UserCreatedEvent>(consumeResult.Message.Value, options);
-
-                                if (userEvent != null && userEvent.Usuario != null)
-                                {
-                                    int usuarioId = userEvent.Usuario.Id;
-                                    string nome = userEvent.Usuario.Nome;
-                                    string emailUsuario = userEvent.Usuario.Email;
-
-                                    Console.WriteLine($"[Kafka] Novo usuário recebido! ID: {usuarioId} | Nome: {nome} | E-mail: {emailUsuario}");
-
-                                    // Instancia e dispara o serviço de e-mail usando os dados capturados
-                                    var emailService = new EmailService(_configuration);
-
-                                    // Presumo que o método Enviar() receba o e-mail do usuário e o nome
-                                    await emailService.EnviarBoasVindasAsync(emailUsuario, nome);
-                                }
+                                await _emailService.EnviarBoasVindasAsync(
+                                    user.Usuario.Email,
+                                    user.Usuario.Nome
+                                );
                             }
                         }
-                        catch (ConsumeException e)
-                        {
-                            Console.WriteLine($"[Kafka Consumer] Erro ao consumir mensagem: {e.Error.Reason}");
-                        }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    Console.WriteLine("[Kafka Consumer] Encerramento solicitado.");
-                }
-                finally
-                {
-                    _consumer.Close();
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"[Kafka Erro] Erro ao consumir mensagem: {e.Error.Reason}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Erro Geral] Erro processando evento: {ex.Message}");
+                    }
                 }
             }, cancellationToken);
         }
