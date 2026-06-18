@@ -16,7 +16,7 @@ namespace FIAP.PosTech.ArqSistemas.NotificationWS.Workers
             var groupId = configuration["KafkaConfig:GroupId"];
 
             _consumerUserCreated = new UserEventConsumer(bootstrapServers, topicNameUserCreated, groupId, configuration);
-            _consumerPaymentProcessed = new PaymentProcessedEventConsumer(bootstrapServers, topicNamePaymentProcessed, groupId, configuration);
+           // _consumerPaymentProcessed = new PaymentProcessedEventConsumer(bootstrapServers, topicNamePaymentProcessed, groupId, configuration);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
