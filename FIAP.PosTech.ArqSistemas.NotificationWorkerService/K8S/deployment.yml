@@ -1,0 +1,35 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fiap-notification-ws-deployment
+  labels:
+    app: fiap-notification-ws
+spec:
+  replicas: 1 # Geralmente inicia com 1 réplica. Pode ser escalado se houver suporte a concorrência na fila.
+  selector:
+    matchLabels:
+      app: fiap-notification-ws
+  template:
+    metadata:
+      labels:
+        app: fiap-notification-ws
+    spec:
+      containers:
+      - name: fiap-notification-ws
+        image: rodrigosiqsilva/fiap-notification-ws:latest 
+        imagePullPolicy: IfNotPresent
+        resources:
+          # Dimensionamento padrão recomendado para microsserviços de notificação em .NET
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "300m"
+        env:
+        - name: DOTNET_ENVIRONMENT
+          value: "Production"
+        # Serviços de notificação geralmente precisam de credenciais de SMTP ou mensageria.
+        # Você pode descomentar e adicionar as variáveis necessárias abaixo:
+        #- name: ConnectionStrings__RabbitMQ
+        #  value: "amqp://guest:guest@rabbitmq-service:5672/"
