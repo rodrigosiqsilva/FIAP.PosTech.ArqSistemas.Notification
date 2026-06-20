@@ -28,4 +28,4 @@ RUN dotnet publish "./FIAP.PosTech.ArqSistemas.NotificationWS.csproj" -c $BUILD_
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "FIAP.PosTech.ArqSistemas.NotificationWorkerService.dll"]
+ENTRYPOINT ["dotnet", "FIAP.PosTech.ArqSistemas.NotificationWS.App.dll"]
